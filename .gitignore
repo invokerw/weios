@@ -58,3 +58,4 @@ dkms.conf
 ./learn/.DS_Store
 bochsout.txt
 *.img
+*.img.lock

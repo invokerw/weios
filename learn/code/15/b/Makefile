@@ -7,13 +7,13 @@ LD = /usr/local/i386elfgcc/bin/i386-elf-ld
 
 EXES = kernel.bin mbr.bin loader.bin
 
-INCLUDE = -I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/ -I thread/ -I userprog/ -I fs/
-VPATH = boot:device:kernel:lib:lib/kernel:lib/user:thread:userprog:fs
+INCLUDE = -I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/ -I thread/ -I userprog/ -I fs/ -I shell/
+VPATH = boot:device:kernel:lib:lib/kernel:lib/user:thread:userprog:fs:shell
 
 # 确保 main.o 在 链接的第一位，否则就要修改 loader 中的跳转
 KERNEL_C_OBJS = main.o init.o interrupt.o timer.o debug.o string.o bitmap.o \
 	memory.o thread.o list.o sync.o console.o keyboard.o ioqueue.o syscall.o syscall_init.o \
-	stdio_kernel.o ide.o fs.o dir.o file.o inode.o fork.o
+	stdio_kernel.o ide.o fs.o dir.o file.o inode.o fork.o shell.o assert.o
 KERNEL_AS_OBJS = kernel.o print.o switch.o tss.o process.o stdio.o
 
 vpath %.c $(VPATH)

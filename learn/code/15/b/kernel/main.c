@@ -15,6 +15,7 @@
 #include "dir.h"
 #include "string.h"
 #include "syscall.h"
+#include "shell.h"
 
 void init(void);
 
@@ -34,8 +35,8 @@ void init(void) {
     uint32_t ret_pid = fork();
     if(ret_pid) {
         printf("i am father, my pid is %d, child pid is %d\n", getpid(), ret_pid);
-    } else {
-        printf("i am child, my pid is %d, ret pid is %d\n", getpid(), ret_pid);
+    } else {  //子进程
+        my_shell();
     }
     while(1);
 }

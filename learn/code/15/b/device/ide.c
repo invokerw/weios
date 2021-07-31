@@ -11,7 +11,7 @@
 #include "string.h"
 #include "list.h"
 
-// 定义硬盘各寄存器的端口号 
+// 定义硬盘各寄存器的端口号
 #define reg_data(channel)	 (channel->port_base + 0)
 #define reg_error(channel)	 (channel->port_base + 1)
 #define reg_sect_cnt(channel)	 (channel->port_base + 2)
@@ -34,12 +34,12 @@
 #define BIT_DEV_LBA	0x40
 #define BIT_DEV_DEV	0x10
 
-// 一些硬盘操作的指令 
+// 一些硬盘操作的指令
 #define CMD_IDENTIFY	   0xec	    // identify 指令
 #define CMD_READ_SECTOR	   0x20     // 读扇区指令
 #define CMD_WRITE_SECTOR   0x30	    // 写扇区指令
 
-// 定义可读写的最大扇区数,调试用的 
+// 定义可读写的最大扇区数,调试用的
 #define max_lba ((50*1024*1024/512) - 1)	// 只支持 50MB 硬盘
 
 uint8_t channel_cnt;	   // 按硬盘数计算的通道数
@@ -74,7 +74,7 @@ struct boot_sector {
     uint16_t signature;		 // 启动扇区的结束标志是 0x55, 0xaa,
 } __attribute__ ((packed));
 
-// 选择读写的硬盘 
+// 选择读写的硬盘
 static void select_disk(struct disk* hd) {
     uint8_t reg_device = BIT_DEV_MBS | BIT_DEV_LBA;
     if (hd->dev_no == 1) {	// 若是从盘就置 DEV 位为 1
@@ -83,7 +83,7 @@ static void select_disk(struct disk* hd) {
     outb(reg_dev(hd->my_channel), reg_device);
 }
 
-// 向硬盘控制器写入起始扇区地址及要读写的扇区数 
+// 向硬盘控制器写入起始扇区地址及要读写的扇区数
 static void select_sector(struct disk* hd, uint32_t lba, uint8_t sec_cnt) {
     ASSERT(lba <= max_lba);
     struct ide_channel* channel = hd->my_channel;
@@ -149,6 +149,7 @@ static bool busy_wait(struct disk* hd) {
 
 // 从硬盘读取 sec_cnt 个扇区到 buf
 void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {   // 此处的 sec_cnt 为 32 位大小
+    // printk("ide read lba %x max %x\n", lba, max_lba);
     ASSERT(lba <= max_lba);
     ASSERT(sec_cnt > 0);
     lock_acquire (&hd->my_channel->lock);
@@ -165,7 +166,7 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {   //
             secs_op = sec_cnt - secs_done;
         }
 
-        // 2 写入待读入的扇区数和起始扇区号 
+        // 2 写入待读入的扇区数和起始扇区号
         select_sector(hd, lba + secs_done, secs_op);
 
         // 3 执行的命令写入 reg_cmd 寄存器
@@ -176,7 +177,7 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {   //
         // 将自己阻塞, 等待硬盘完成读操作后通过中断处理程序唤醒自己
         sema_down(&hd->my_channel->disk_done);
 
-        // 4 检测硬盘状态是否可读 
+        // 4 检测硬盘状态是否可读
         // 醒来后开始执行下面代码
         if (!busy_wait(hd)) {			      // 若失败
             char error[64];
@@ -184,7 +185,7 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {   //
             PANIC(error);
         }
 
-        // 5 把数据从硬盘的缓冲区中读出 
+        // 5 把数据从硬盘的缓冲区中读出
         read_from_sector(hd, (void*)((uint32_t)buf + secs_done * 512), secs_op);
         secs_done += secs_op;
     }
@@ -209,23 +210,23 @@ void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt) {
             secs_op = sec_cnt - secs_done;
         }
 
-        // 2 写入待写入的扇区数和起始扇区号 
+        // 2 写入待写入的扇区数和起始扇区号
         select_sector(hd, lba + secs_done, secs_op);		      // 先将待读的块号 lba 地址和待读入的扇区数写入 lba 寄存器
 
         // 3 执行的命令写入 reg_cmd 寄存器
         cmd_out(hd->my_channel, CMD_WRITE_SECTOR);	      // 准备开始写数据
 
-        // 4 检测硬盘状态是否可读 
+        // 4 检测硬盘状态是否可读
         if (!busy_wait(hd)) {			      // 若失败
             char error[64];
             sprintf(error, "%s write sector %d failed!!!!!!\n", hd->name, lba);
             PANIC(error);
         }
 
-        // 5 将数据写入硬盘 
+        // 5 将数据写入硬盘
         write2sector(hd, (void*)((uint32_t)buf + secs_done * 512), secs_op);
 
-        // 在硬盘响应期间阻塞自己 
+        // 在硬盘响应期间阻塞自己
         sema_down(&hd->my_channel->disk_done);
         secs_done += secs_op;
     }
@@ -244,7 +245,7 @@ static void swap_pairs_bytes(const char* dst, char* buf, uint32_t len) {
     buf[idx] = '\0';
 }
 
-// 获得硬盘参数信息 
+// 获得硬盘参数信息
 static void identify_disk(struct disk* hd) {
     char id_info[512];
     select_disk(hd);
@@ -287,10 +288,12 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba) {
         if (p->fs_type == 0x5) {	 // 若为扩展分区
             if (ext_lba_base != 0) {
                 // 子扩展分区的 start_lba 是相对于主引导扇区中的总扩展分区地址
+                //printk("2 s %x base %x, lba %x, max %x\n",p->start_lba, ext_lba_base, p->start_lba + ext_lba_base, max_lba);
                 partition_scan(hd, p->start_lba + ext_lba_base);
             } else { // ext_lba_base 为 0 表示是第一次读取引导块,也就是主引导记录所在的扇区
                 // 记录下扩展分区的起始 lba 地址,后面所有的扩展分区地址都相对于此
                 ext_lba_base = p->start_lba;
+                //printk("1 s %x base %x, lba %x, max %x\n",p->start_lba, ext_lba_base, p->start_lba, max_lba);
                 partition_scan(hd, p->start_lba);
             }
         } else if (p->fs_type != 0) { // 若是有效的分区类型
@@ -318,7 +321,7 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba) {
     sys_free(bs);
 }
 
-// 打印分区信息 
+// 打印分区信息
 static bool partition_info(struct list_elem* pelem, int ) {
     struct partition* part = elem2entry(struct partition, part_tag, pelem);
     printk("   %s start_lba:0x%x, sec_cnt:0x%x\n",part->name, part->start_lba, part->sec_cnt);
@@ -328,7 +331,7 @@ static bool partition_info(struct list_elem* pelem, int ) {
     return false;
 }
 
-// 硬盘中断处理程序 
+// 硬盘中断处理程序
 void intr_hd_handler(uint8_t irq_no) {
     ASSERT(irq_no == 0x2e || irq_no == 0x2f);
     uint8_t ch_no = irq_no - 0x2e;
@@ -346,7 +349,7 @@ void intr_hd_handler(uint8_t irq_no) {
     }
 }
 
-// 硬盘数据结构初始化 
+// 硬盘数据结构初始化
 void ide_init() {
     printk("ide_init start\n");
     uint8_t hd_cnt = *((uint8_t*)(0x475));	      // 获取硬盘的数量
@@ -357,7 +360,7 @@ void ide_init() {
     struct ide_channel* channel;
     uint8_t channel_no = 0, dev_no = 0;
 
-    // 处理每个通道上的硬盘 
+    // 处理每个通道上的硬盘
     while (channel_no < channel_cnt) {
         channel = &channels[channel_no];
         sprintf(channel->name, "ide%d", channel_no);
@@ -383,7 +386,7 @@ void ide_init() {
 
         register_handler(channel->irq_no, intr_hd_handler);
 
-        // 分别获取两个硬盘的参数及分区信息 
+        // 分别获取两个硬盘的参数及分区信息
         while (dev_no < 2) {
             struct disk* hd = &channel->devices[dev_no];
             hd->my_channel = channel;
@@ -401,7 +404,7 @@ void ide_init() {
     }
 
     printk("\n   all partition info\n");
-    // 打印所有分区信息 
+    // 打印所有分区信息
     list_traversal(&partition_list, partition_info, (int)NULL);
     printk("ide_init done\n");
 }

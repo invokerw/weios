@@ -64,6 +64,6 @@ http://www.cs.bham.ac.uk/~exr/lectures/opsys/10_11/lectures/os-dev.pdf
         设置与显示任务的工作目录，获取文件属性
 - 15
     1. a 实现 fork 系统调用
-    2. b
+    2. b put char, clear screen 系统调用，shell 雏形，还有点问题？
 
         

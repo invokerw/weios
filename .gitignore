@@ -53,3 +53,8 @@ dkms.conf
 
 
 .idea/
+.DS_Store
+./learn/.idea/
+./learn/.DS_Store
+bochsout.txt
+*.img

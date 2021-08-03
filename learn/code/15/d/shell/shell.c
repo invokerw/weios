@@ -7,17 +7,18 @@
 #include "global.h"
 #include "assert.h"
 #include "string.h"
+#include "buildin_cmd.h"
+#include "exec.h"
 
-#define cmd_len 128	   // 最大支持键入 128 个字符的命令行输入
 #define MAX_ARG_NR 16	   // 加上命令名外,最多支持15个参数
 
-// 存储输入的命令 
-static char cmd_line[cmd_len] = {0};
-char final_path[MAX_PATH_LEN] = {0};      // 用于洗路径时的缓冲
+// 存储输入的命令
+static char cmd_line[MAX_PATH_LEN] = {0};
+char final_path[MAX_PATH_LEN] = {0};      // 用于写路径时的缓冲
 // 用来记录当前目录,是当前目录的缓存, 每次执行 cd 命令时会更新此内容
-char cwd_cache[64] = {0};
+char cwd_cache[MAX_PATH_LEN] = {0};
 
-// 输出提示符 
+// 输出提示符
 void print_prompt(void) {
     printf("[wei@weios %s]$ ", cwd_cache);
 }
@@ -72,9 +73,9 @@ static int32_t cmd_parse(char* cmd_str, char** argv, char token) {
     }
     char* next = cmd_str;
     int32_t argc = 0;
-    // 外层循环处理整个命令行 
+    // 外层循环处理整个命令行
     while(*next) {
-        // 去除命令字或参数之间的空格 
+        // 去除命令字或参数之间的空格
         while(*next == token) {
             next++;
         }
@@ -84,7 +85,7 @@ static int32_t cmd_parse(char* cmd_str, char** argv, char token) {
         }
         argv[argc] = next;
 
-        // 内层循环处理命令行中的每个命令字及参数 
+        // 内层循环处理命令行中的每个命令字及参数
         while (*next && *next != token) {	  // 在字符串结束前找单词分隔符
             next++;
         }
@@ -105,7 +106,7 @@ static int32_t cmd_parse(char* cmd_str, char** argv, char token) {
 char* argv[MAX_ARG_NR];    // argv 必须为全局变量，为了以后 exec 的程序可访问参数
 int32_t argc = -1;
 
-// 简单的shell 
+// 简单的shell
 void my_shell(void) {
     cwd_cache[0] = '/';
     while (1) {
@@ -122,13 +123,49 @@ void my_shell(void) {
             printf("num of arguments exceed %d\n", MAX_ARG_NR);
             continue;
         }
-
-        int32_t arg_idx = 0;
-        while(arg_idx < argc) {
-            printf("%s ", argv[arg_idx]);
-            arg_idx++;
+        if (!strcmp("ls", argv[0])) {
+            buildin_ls(argc, argv);
+        } else if (!strcmp("cd", argv[0])) {
+            if (buildin_cd(argc, argv) != NULL) {
+                memset(cwd_cache, 0, MAX_PATH_LEN);
+                strcpy(cwd_cache, final_path);
+            }
+        } else if (!strcmp("pwd", argv[0])) {
+            buildin_pwd(argc, argv);
+        } else if (!strcmp("ps", argv[0])) {
+            buildin_ps(argc, argv);
+        } else if (!strcmp("clear", argv[0])) {
+            buildin_clear(argc, argv);
+        } else if (!strcmp("mkdir", argv[0])){
+            buildin_mkdir(argc, argv);
+        } else if (!strcmp("rmdir", argv[0])){
+            buildin_rmdir(argc, argv);
+        } else if (!strcmp("rm", argv[0])) {
+            buildin_rm(argc, argv);
+        } else {
+            // 如果是外部命令,需要从磁盘上加载
+            int32_t pid = fork();
+            if (pid) {	   // 父进程
+                // 下面这个while必须要加上,否则父进程一般情况下会比子进程先执行,
+                // 因此会进行下一轮循环将 findl_path 清空,这样子进程将无法从 final_path 中获得参数
+                while(1);
+            } else {	   // 子进程
+                make_clear_abs_path(argv[0], final_path);
+                argv[0] = final_path;
+                // 先判断下文件是否存在
+                struct stat file_stat;
+                memset(&file_stat, 0, sizeof(struct stat));
+                if (stat(argv[0], &file_stat) == -1) {
+                    printf("my_shell: cannot access %s: No such file or directory\n", argv[0]);
+                } else {
+                    int ret = execv(argv[0], argv);
+                    if (ret == -1) {
+                        printf("my_shell: execv %s error\n", argv[0]);
+                    }
+                }
+                while(1);
+            }
         }
-        printf("\n");
     }
     panic("my_shell: should not be here");
 }

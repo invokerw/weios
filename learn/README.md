@@ -64,6 +64,21 @@ http://www.cs.bham.ac.uk/~exr/lectures/opsys/10_11/lectures/os-dev.pdf
         设置与显示任务的工作目录，获取文件属性
 - 15
     1. a 实现 fork 系统调用
-    2. b put char, clear screen 系统调用，shell 雏形，还有点问题？
+    2. b put char, clear screen 系统调用，shell 雏形
+    3. c 完善 shell 实现 cd ls pwd ps clear mkdir rmdir rm 等系统调用以及 shell 命令
+    4. d 实现 exec，shell 支持外部命令，加载硬盘上的用户程序，用户进程支持参数
+    5. e 完善进程退出。实现 wait 和 exit，cat
+    6. f 实现管道函数，shell 中可以使用管道
+    
+## 注意 
+1. 一定要对内存进行初始化！！！！
+2. 14 章包括之前的 ide.c 需要对 name 进行 memeset。否则有可能出现莫名其妙的问题
+   ```
+   memset(hd->prim_parts[p_no].name, 0, 8);
+   memset(hd->logic_parts[l_no].name, 0, 8);
+   memset(hd->name, 0, 8);
+   ```
+
+       
 
         

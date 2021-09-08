@@ -4,7 +4,7 @@ IMG_NAME=hd10M.img
 
 cd $TOP_DIR || exit
 rm $IMG_NAME
-bximage -hd=10M -mode=create -q $IMG_NAME
+bximage -hd=10M -func=create -q $IMG_NAME
 cd - || exit
 
 cd boot || exit

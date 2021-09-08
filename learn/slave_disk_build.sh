@@ -3,7 +3,7 @@
 
 IMG_NAME=hd50M_slave.img
 
-bximage -hd=50M -mode=create -q $IMG_NAME
+bximage -hd=50M -func=create -q $IMG_NAME
 #========================================================================
 #                                bximage
 #  Disk Image Creation / Conversion / Resize and Commit Tool for Bochs

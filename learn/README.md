@@ -73,12 +73,21 @@ http://www.cs.bham.ac.uk/~exr/lectures/opsys/10_11/lectures/os-dev.pdf
 ## 注意 
 1. 一定要对内存进行初始化！！！！
 2. 14 章包括之前的 ide.c 需要对 name 进行 memeset。否则有可能出现莫名其妙的问题
-   ```
+   ```c++
    memset(hd->prim_parts[p_no].name, 0, 8);
    memset(hd->logic_parts[l_no].name, 0, 8);
    memset(hd->name, 0, 8);
    ```
-
-       
+3. bochs 2.7 版本以上注意事项
+    1. bochs 配置文件中需要显示声明使用的 gui, 这里使用 `display_library: sdl2`
+    2. `bximage` 的 `-mod` 换成了 `-func`
+    
+4. 运行
+    1. 先运行 `code` 章节中的 gen.sh
+    2. 运行当前目录下的 `run.sh`
+    3. only for mac
+    4. 需要 `brew install bochs`,代码在 bochs 2.7 版本可运行，不同版本可能有些配置变化
+    5. 交叉编译参考 `cross-compliler` 目录
+    
 
         

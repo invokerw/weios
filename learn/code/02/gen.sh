@@ -3,7 +3,7 @@ TOP_DIR=../../
 
 cd $TOP_DIR || exit
 rm hd10M.img
-bximage -hd=10M -mode=create -q hd10M.img
+bximage -hd=10M -func=create -q hd10M.img
 cd - || exit
 
 nasm mbr.S -o mbr.bin

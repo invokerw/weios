@@ -17,7 +17,7 @@ if [ ! -d "./out/kernel" ];then
 fi
 
 # for img
-bximage -hd=10M -mode=create -q $IMG_NAME
+bximage -hd=10M -func=create -q $IMG_NAME
 mv $IMG_NAME $TOP_DIR/$IMG_NAME
 
 # for boot
